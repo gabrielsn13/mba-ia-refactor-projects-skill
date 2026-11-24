@@ -512,12 +512,82 @@ A skill deve atingir os seguintes mínimos em **todos os 3 projetos**:
 
 # Construção da Skill
 
-*(a preencher após as execuções: decisões de design, catálogo, agnosticismo, desafios)*
+A skill `refactor-arch` fica em `.claude/skills/refactor-arch/` e `.github/skills/refactor-arch/` (conteúdo idêntico) em cada um dos 3 projetos.
+
+**Arquivos**
+| Arquivo | Papel |
+|---|---|
+| `SKILL.md` | Orquestra as 3 fases, define o gate de confirmação e o formato do relatório |
+| `project-analysis.md` | Heurísticas agnósticas para detectar linguagem, framework, banco e arquitetura |
+| `anti-patterns-catalog.md` | Catálogo AP-01..AP-17 + APIs deprecated, com sinais de detecção e severidade |
+| `report-template.md` | Template do relatório (Fase 1 + auditoria) |
+| `mvc-guidelines.md` | Camadas-alvo (config, database, models, controllers, views, middlewares, services) |
+| `refactoring-playbook.md` | Receitas antes/depois (P1–P14) para cada anti-pattern |
+
+**Decisões de design**
+- Três fases com pausa obrigatória antes de qualquer alteração: (1) análise, (2) auditoria com relatório salvo em `reports/audit-project-N.md`, (3) refatoração só após "y".
+- Agnóstica de tecnologia: o catálogo descreve sinais por conceito (credencial hardcoded, N+1, God class) com exemplos em Python e Node.js.
+- Severidades CRITICAL/HIGH/MEDIUM/LOW com linhas exatas de cada achado.
+- Fase 3 inicia com *baseline* de comportamento (chamadas reais) e termina com boot, comparação e grep de anti-patterns.
+- Projeto parcialmente em camadas (projeto 3): melhora-se a estrutura existente em vez de recriar do zero.
+
+**Desafios**
+- Claude Code não estava disponível (plano Free); a skill foi executada pelo GitHub Copilot seguindo o mesmo `SKILL.md`.
+- `sqlite3` nativo bloqueado pelo `allowScripts` do npm (projeto 2): resolvido com `prebuild-install`.
+- Preservar contratos de API enquanto se corrige segurança: mudanças de comportamento foram listadas explicitamente em cada PR.
 
 # Resultados
 
-*(a preencher após as execuções)*
+## Achados por projeto
+
+| Projeto | Stack | CRITICAL | HIGH | MEDIUM | LOW | Total |
+|---|---|---|---|---|---|---|
+| 1 — code-smells-project | Python/Flask | 4 | 4 | 5 | 3 | 16 |
+| 2 — ecommerce-api-legacy | Node/Express | 5 | 3 | 5 | 3 | 16 |
+| 3 — task-manager-api | Python/Flask + SQLAlchemy | 5 | 4 | 7 | 4 | 20 |
+
+Relatórios completos: `reports/audit-project-1.md`, `-2.md`, `-3.md`.
+
+## Antes / depois da estrutura
+
+| Projeto | Antes | Depois |
+|---|---|---|
+| 1 | Poucos arquivos monolíticos (app/controllers/models/database misturados) | `src/{config,database,models,controllers,views,middlewares,...}` |
+| 2 | `AppManager.js` (God class), `utils.js`, rotas e SQL misturados | `src/{config,database,models,controllers,views,middlewares,services,utils}` + `createApp(db)` |
+| 3 | `app.py` global, `routes/` com lógica e queries, `models/`, `utils/helpers.py` não usado | `src/{config,database,models,controllers,views,middlewares,services,utils}` + `create_app()`; `app.py` raiz fino |
+
+## Principais correções
+- Credenciais/segredos hardcoded → variáveis de ambiente (`.env.example` em cada projeto).
+- MD5/criptografia fraca → scrypt (P2) e hash werkzeug com migração do legado (P3).
+- Tokens falsos/sem autorização → token assinado + controle por role (P3), `X-Admin-Token` (P2).
+- N+1 → `joinedload`/queries agrupadas; SQL injection → queries parametrizadas.
+- `except:` nus e `print` → handler de erro central e `logging`.
+- APIs deprecated (`utcnow`, `Query.get`) → `datetime.now(timezone.utc)`, `db.session.get`.
+
+## Checklist de validação (executado)
+- [x] Fase 1: linguagem, framework, banco, arquitetura e domínio identificados corretamente nos 3 projetos
+- [x] Fase 2: achados com arquivo/linhas, ordenados por severidade, relatório salvo, pausa para confirmação respeitada
+- [x] Fase 3: estrutura MVC criada, aplicação sobe sem erros, endpoints respondem como antes (exceto mudanças intencionais), grep de anti-patterns limpo
+
+## Evidências
+Baseline e verificação pós-refatoração por projeto: chamadas reais (HTTP/test client) antes e depois, com diff contendo apenas as mudanças intencionais documentadas em cada PR (#3, #5, #7).
 
 # Como Executar
 
-*(a preencher)*
+**Skill**: no Claude Code, dentro do projeto, `claude` e depois `/refactor-arch`. Com GitHub Copilot, a skill é lida de `.github/skills/refactor-arch/`. A skill pausa após a auditoria; responda `y` para refatorar.
+
+**Projetos**
+```bash
+# Projeto 1 e 3 (Python/Flask)
+cd code-smells-project   # ou task-manager-api
+pip install -r requirements.txt
+cp .env.example .env     # e exporte as variáveis
+python app.py            # (P3: python seed.py para dados iniciais)
+
+# Projeto 2 (Node/Express)
+cd ecommerce-api-legacy
+npm install
+cp .env.example .env
+npm start
+```
+No projeto 3, envie `Authorization: Bearer <token>` (obtido em `POST /login`); no projeto 2, `X-Admin-Token` para relatório e DELETE.

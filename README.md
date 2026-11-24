@@ -564,10 +564,34 @@ Relatórios completos: `reports/audit-project-1.md`, `-2.md`, `-3.md`.
 - `except:` nus e `print` → handler de erro central e `logging`.
 - APIs deprecated (`utcnow`, `Query.get`) → `datetime.now(timezone.utc)`, `db.session.get`.
 
-## Checklist de validação (executado)
-- [x] Fase 1: linguagem, framework, banco, arquitetura e domínio identificados corretamente nos 3 projetos
-- [x] Fase 2: achados com arquivo/linhas, ordenados por severidade, relatório salvo, pausa para confirmação respeitada
-- [x] Fase 3: estrutura MVC criada, aplicação sobe sem erros, endpoints respondem como antes (exceto mudanças intencionais), grep de anti-patterns limpo
+## Checklist de validação (executado, por projeto)
+
+| Item | P1 Flask | P2 Express | P3 Flask |
+|---|---|---|---|
+| Fase 1: linguagem, framework, banco, arquitetura e domínio corretos | [x] | [x] | [x] |
+| Fase 2: achados com arquivo/linhas, por severidade, relatório salvo | [x] | [x] | [x] |
+| Fase 2: pausa para confirmação antes de alterar código | [x] | [x] | [x] |
+| Fase 3: estrutura MVC criada | [x] | [x] | [x] |
+| Fase 3: aplicação sobe sem erros | [x] | [x] | [x] |
+| Fase 3: endpoints respondem como antes (exceto mudanças intencionais) | [x] | [x] | [x] |
+| Fase 3: grep de anti-patterns limpo | [x] | [x] | [x] |
+
+## Logs de execução após a refatoração (exemplo, projeto 3, boot real)
+```
+GET  /health                              -> 200
+GET  /tasks (sem token)                   -> 401 {"error":"Token ausente ou inválido"}
+POST /users (role admin sem ser admin)    -> 403
+POST /login                               -> 200 (token assinado)
+GET  /tasks (com Bearer)                  -> 200
+DELETE /users/1 (não admin)               -> 403
+```
+Nos projetos 1 e 2 a verificação foi equivalente: servidor iniciado como processo real e chamadas HTTP comparadas com o baseline anterior à refatoração (P2: 401 sem `X-Admin-Token`, 403 com token errado).
+
+## Observações sobre a skill em stacks diferentes
+- **Python/Flask (P1, P3):** a detecção por `requirements.txt` e imports funcionou bem; os anti-patterns de SQL injection, N+1 e `except:` nus foram encontrados de forma direta. APIs deprecated (`utcnow`, `Query.get`) só aparecem em P3.
+- **Node/Express (P2):** os mesmos conceitos do catálogo (God class, callback hell, credenciais, criptografia fraca) foram mapeados para JS; a refatoração exigiu promisificar o sqlite e extrair um composition root.
+- **Projeto parcialmente em camadas (P3):** a skill melhorou as camadas existentes em vez de recriar tudo, movendo lógica das rotas para controllers e extraindo categorias de `report_routes`.
+- Limitação: a execução foi feita pelo GitHub Copilot lendo o `SKILL.md`, não pelo Claude Code.
 
 ## Evidências
 Baseline e verificação pós-refatoração por projeto: chamadas reais (HTTP/test client) antes e depois, com diff contendo apenas as mudanças intencionais documentadas em cada PR (#3, #5, #7).

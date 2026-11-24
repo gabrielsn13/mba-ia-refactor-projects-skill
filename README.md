@@ -446,3 +446,78 @@ A skill deve atingir os seguintes mínimos em **todos os 3 projetos**:
 - **Projetos diferentes exigem adaptação** — a Fase 3 de um projeto já parcialmente organizado não vai ter as mesmas transformações de um monolito. Sua skill deve se adaptar ao contexto.
 - **Pedir confirmação na Fase 2 é obrigatório** — o humano deve revisar o relatório antes de qualquer modificação.
 - **Consulte as referências do curso** — revise a documentação oficial da ferramenta escolhida e os materiais das aulas para relembrar a estrutura e anatomia de uma skill.
+
+---
+
+# Análise Manual
+
+## Projeto 1 — `code-smells-project` (Python/Flask, API de E-commerce)
+
+| # | Sev. | Problema | Local | Por que importa |
+|---|---|---|---|---|
+| 1 | CRITICAL | SQL Injection (queries concatenadas, inclusive no login) | `models.py:28, 48-50, 58-61, 92, 109-111, 127-129, 174, 280, 291-297` | Bypass de login, vazamento/alteração de dados |
+| 2 | CRITICAL | `/admin/query` executa SQL arbitrário e `/admin/reset-db` apaga tudo, sem autenticação | `app.py:47-78` | Qualquer cliente destrói/lê o banco |
+| 3 | CRITICAL | `SECRET_KEY` e `DEBUG` hardcoded; `/health` devolve `secret_key` | `app.py:7-8`, `controllers.py:285-289` | Vazamento de segredo |
+| 4 | CRITICAL | Senhas em texto puro, retornadas em `/usuarios` | `database.py:76-78`, `models.py:83, 99`, `controllers.py:130` | Exposição de credenciais |
+| 5 | HIGH | Lógica de negócio/validação/notificações em controllers; `app.py` mistura rotas, SQL e admin | `controllers.py:24-62, 188-220`, `app.py:47-78` | Sem camadas, não testável |
+| 6 | HIGH | Conexão global mutável (`check_same_thread=False`) | `database.py:4-10` | Race conditions, acoplamento |
+| 7 | HIGH | Pedido sem transação/rollback; estoque checado e decrementado separadamente | `models.py:133-169` | Overselling, dados inconsistentes |
+| 8 | MEDIUM | N+1 em pedidos (itens e produtos por loop) | `models.py:171-233` | Degrada com volume |
+| 9 | MEDIUM | Serialização de produto/pedido e validações duplicadas | `models.py:12-21, 31-40, 304-313`, `controllers.py:24-96` | Manutenção cara |
+| 10 | MEDIUM | `try/except` repetido devolvendo `str(e)`; sem handler central | `controllers.py` (todo) | Vaza detalhes internos |
+| 11 | MEDIUM | `get_json()` sem checar `None`; tipos não validados | `controllers.py:87-90, 169, 239` | 500 em vez de 400 |
+| 12 | LOW | `print` no lugar de logging | `controllers.py:8, 57, 179, 208-210` | Sem níveis/rastreio |
+| 13 | LOW | Magic numbers (faixas de desconto) e strings (status/categorias) | `models.py:256-262`, `controllers.py:52, 242` | Regras escondidas |
+| 14 | LOW | Imports não usados, `id` sombreando builtin, `cursor2/cursor3` | `models.py:2`, `database.py:2`, `app.py:4` | Legibilidade |
+
+## Projeto 2 — `ecommerce-api-legacy` (Node.js/Express, LMS com checkout)
+
+| # | Sev. | Problema | Local | Por que importa |
+|---|---|---|---|---|
+| 1 | CRITICAL | Credenciais hardcoded (`dbPass`, `paymentGatewayKey pk_live_...`, SMTP) | `utils.js:1-7` | Chave de pagamento live versionada |
+| 2 | CRITICAL | Número do cartão logado em texto puro com a chave do gateway | `AppManager.js:45` | Violação PCI-DSS |
+| 3 | CRITICAL | God Class `AppManager`: schema, seed, rotas, checkout, relatório | `AppManager.js:4-139` | Zero separação MVC |
+| 4 | HIGH | `badCrypto` (base64 repetido, 10 chars), senha default `"123456"`, seed `'123'` em texto puro | `utils.js:17-23`, `AppManager.js:18, 68` | Senhas triviais de quebrar |
+| 5 | HIGH | Endpoints admin e `DELETE /api/users/:id` sem autenticação | `AppManager.js:80, 131` | Leitura financeira/remoção abertas |
+| 6 | HIGH | Estado global mutável (`globalCache`, `totalRevenue` sem uso) | `utils.js:9-15` | Memory leak, acoplamento |
+| 7 | HIGH | Checkout sem transação; DELETE deixa matrículas/pagamentos órfãos | `AppManager.js:50-61, 131-136` | Inconsistência |
+| 8 | MEDIUM | N+1 no relatório (courses→enrollments→users→payments) | `AppManager.js:83-127` | Performance |
+| 9 | MEDIUM | Callback hell (5 níveis), erro do audit log ignorado | `AppManager.js:37-77` | Difícil manter |
+| 10 | MEDIUM | Validação só de presença; erros como strings soltas, sem handler central | `AppManager.js:35-48` | API inconsistente |
+| 11 | MEDIUM | `enrollments` pode ser `undefined`; ordem do relatório não determinística | `AppManager.js:92-93, 119` | Crash/inconsistência |
+| 12 | LOW | Nomes abreviados (`u, e, p, cid, cc`) | `AppManager.js:29-33` | Legibilidade |
+| 13 | LOW | Magic values (`"4"`, `'PAID'`, `10000`, `:memory:`) | `AppManager.js:7, 46`, `utils.js:19-22` | Regras escondidas |
+| 14 | LOW | Código morto (`totalRevenue`), `console.log` no lugar de logger | `utils.js:10`, `AppManager.js:45`, `app.js:13` | Ruído |
+
+## Projeto 3 — `task-manager-api` (Python/Flask + SQLAlchemy, parcialmente em camadas)
+
+| # | Sev. | Problema | Local | Por que importa |
+|---|---|---|---|---|
+| 1 | CRITICAL | Senha com MD5 sem salt | `models/user.py:27-32` | Quebrável em segundos |
+| 2 | CRITICAL | Hash de senha exposto na API (`to_dict` inclui `password`) | `models/user.py:21`, `user_routes.py:33, 85, 129, 209` | Vazamento de credenciais |
+| 3 | CRITICAL | Segredos hardcoded (`SECRET_KEY`, senha SMTP) | `app.py:13`, `notification_service.py:9-10` | Credenciais versionadas |
+| 4 | HIGH | Token falso (`fake-jwt-token-<id>`), nenhuma rota protegida, qualquer um cria `role=admin` | `user_routes.py:207-211, 52, 134` | Sem authn/authz |
+| 5 | HIGH | Lógica de negócio, queries e validação dentro das routes; categorias dentro de `report_routes.py` | `task_routes.py`, `user_routes.py`, `report_routes.py` | Viola MVC |
+| 6 | HIGH | `process_task_data` e constantes de `helpers.py` não usados; validações divergentes | `helpers.py:57-116` vs `task_routes.py:85-223` | Código morto, inconsistência |
+| 7 | MEDIUM | N+1 (`User.query.get`/`Category.query.get` por task, `len(u.tasks)`, contagens em loop) | `task_routes.py:41-57`, `user_routes.py:22`, `report_routes.py:55-56, 163` | Escala mal |
+| 8 | MEDIUM | Regra de overdue copiada 6x; serialização manual repetida; `Task.is_overdue()` ignorado | `task_routes.py:30-39, 71-80, 284-287`, `user_routes.py:171-180`, `report_routes.py:34-43, 132-135` | Duplicação |
+| 9 | MEDIUM | `except:` nu, sem handler central | `task_routes.py:62, 137, 204, 236`, `user_routes.py:130, 149` | Esconde bugs |
+| 10 | MEDIUM | Validação ausente (`get_json()` None, `int(priority)` sem try, `is_valid_color` não usado) | `report_routes.py:196`, `task_routes.py:113, 182, 261-264` | 500 em vez de 400 |
+| 11 | LOW | APIs deprecated: `Model.query.get()`, `datetime.utcnow()` | `task_routes.py:42, 67`, `models/*.py`, `helpers.py:38` | Warnings/remoção futura |
+| 12 | LOW | Imports não usados; `NotificationService` nunca usado | `app.py:7`, `task_routes.py:7`, `helpers.py:1-7` | Ruído |
+| 13 | LOW | Magic numbers/strings (status, roles, tamanhos) apesar de constantes existentes | `user_routes.py:64`, `task_routes.py:99, 110` | Legibilidade |
+| 14 | LOW | `print` no lugar de logging, `debug=True` + `host=0.0.0.0`, `type(x) == list` | `app.py:30-34`, `task_routes.py:149, 141` | Boas práticas |
+
+---
+
+# Construção da Skill
+
+*(a preencher após as execuções: decisões de design, catálogo, agnosticismo, desafios)*
+
+# Resultados
+
+*(a preencher após as execuções)*
+
+# Como Executar
+
+*(a preencher)*

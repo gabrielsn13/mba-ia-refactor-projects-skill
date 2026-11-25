@@ -615,3 +615,26 @@ cp .env.example .env
 npm start
 ```
 No projeto 3, envie `Authorization: Bearer <token>` (obtido em `POST /login`); no projeto 2, `X-Admin-Token` para relatório e DELETE.
+
+## Validação automatizada mínima
+
+```bash
+# Projeto 1
+cd code-smells-project
+python -m unittest discover -s tests -t .
+
+# Projeto 2
+cd ../ecommerce-api-legacy
+npm test
+
+# Projeto 3
+cd ../task-manager-api
+python -m unittest discover -s tests -t .
+```
+
+Para o projeto Node, o `sqlite3` pode exigir rebuild em ambientes com Node recente:
+
+```bash
+npm rebuild sqlite3
+npm test
+```

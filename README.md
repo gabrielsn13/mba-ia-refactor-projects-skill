@@ -512,7 +512,7 @@ A skill deve atingir os seguintes mínimos em **todos os 3 projetos**:
 
 # Construção da Skill
 
-A skill `refactor-arch` fica em `.claude/skills/refactor-arch/` e `.github/skills/refactor-arch/` (conteúdo idêntico) em cada um dos 3 projetos.
+A skill `refactor-arch` fica em `.gemini/skills/refactor-arch/`, `.claude/skills/refactor-arch/` e `.github/skills/refactor-arch/` (conteúdo idêntico) em cada um dos 3 projetos.
 
 **Arquivos**
 | Arquivo | Papel |
@@ -598,7 +598,15 @@ Baseline e verificação pós-refatoração por projeto: chamadas reais (HTTP/te
 
 # Como Executar
 
-**Skill**: no Claude Code, dentro do projeto, `claude` e depois `/refactor-arch`. Com GitHub Copilot, a skill é lida de `.github/skills/refactor-arch/`. A skill pausa após a auditoria; responda `y` para refatorar.
+**Skill — Gemini CLI**: requer Node.js, npm e uma conta Google com acesso ao Gemini CLI. Em um terminal aberto na pasta de cada projeto, execute:
+
+```powershell
+npx --yes @google/gemini-cli
+```
+
+Faça login com sua conta Google e, se solicitado, avalie a confiança na pasta do projeto. No prompt do Gemini, use `/skills list` para verificar se `refactor-arch` está disponível e peça: `Use a skill refactor-arch para analisar, auditar e refatorar este projeto.` Confirme a ativação quando solicitada. A skill pausa após a auditoria; revise o relatório antes de responder `y` para iniciar a refatoração.
+
+Repita a execução em `code-smells-project`, `ecommerce-api-legacy` e `task-manager-api`. Como estes diretórios já estão refatorados, para demonstrar as três fases desde o código legado use cópias isoladas dos projetos originais e preserve os relatórios existentes. A execução anterior descrita em Resultados foi feita pelo GitHub Copilot; a execução pelo Gemini ainda precisa ser realizada e documentada.
 
 **Projetos**
 ```bash

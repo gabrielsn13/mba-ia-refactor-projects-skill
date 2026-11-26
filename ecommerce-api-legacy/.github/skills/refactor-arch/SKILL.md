@@ -73,12 +73,13 @@ Leia `mvc-guidelines.md` e `refactoring-playbook.md`.
 2. Planeje a estrutura-alvo adaptando ao projeto:
    - Projeto monolítico → crie todas as camadas.
    - Projeto já parcialmente em camadas → mantenha o que está adequado, mova o que está no lugar errado (ex.: regras de negócio de routes para controllers/services), remova código morto; não recrie do zero.
-3. Aplique as transformações do playbook, por prioridade (CRITICAL primeiro). Atualize `requirements.txt`/`package.json` se adicionar dependências e documente variáveis de ambiente em `.env.example`.
+3. Aplique as transformações do playbook, por prioridade (CRITICAL primeiro). Aplique cada **Recommendation** do relatório **por inteiro**: se o finding apontar código morto (classe, função ou arquivo sem chamadores), **remova-o** — ou integre-o de fato ao fluxo da aplicação, justificando a escolha no resumo final; nunca deixe módulos órfãos "limpos porém sem uso". Atualize `requirements.txt`/`package.json` se adicionar dependências e documente variáveis de ambiente em `.env.example`.
 4. Mantenha um único entry point claro (composition root): configura, registra rotas e inicia o servidor.
 5. **Validação obrigatória**:
    - Instale dependências se necessário e **inicie a aplicação** — deve subir sem erros.
    - Chame **todos** os endpoints do baseline e compare com as respostas originais (status e formato).
    - Reaplique os sinais de detecção do catálogo (grep): nenhum anti-pattern CRITICAL/HIGH deve restar.
+   - Revise o relatório **finding por finding** e confirme que cada Recommendation foi aplicada **integralmente** (inclusive remoções de código morto); liste no resumo qualquer item aplicado parcialmente, com justificativa.
    - Se algo falhar, corrija e valide de novo (máx. 3 tentativas); depois reporte o que restou.
    - Encerre o processo do servidor ao final.
 6. Imprima o resumo:

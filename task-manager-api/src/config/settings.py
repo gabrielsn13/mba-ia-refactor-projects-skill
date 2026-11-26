@@ -19,11 +19,6 @@ class Settings:
     TOKEN_MAX_AGE_SECONDS = int(os.environ.get('TOKEN_MAX_AGE_SECONDS', str(8 * 3600)))
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*')
 
-    SMTP_HOST = os.environ.get('SMTP_HOST')
-    SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
-    SMTP_USER = os.environ.get('SMTP_USER')
-    SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD')
-
     MAX_PAGE_SIZE = 100
 
 

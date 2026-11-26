@@ -606,6 +606,18 @@ A skill foi executada de ponta a ponta pelo **Antigravity CLI 1.5.17** (`agy`), 
 
 Evidências em `reports/evidence/`: logs completos de cada fase (`pN-phase1-2.log`, `pN-phase3.log`) e os relatórios de auditoria gerados pelo `agy` (`agy-audit-project-N.md`). Os relatórios em `reports/audit-project-N.md` e o código refatorado commitado permanecem os da primeira execução.
 
+## Ajustes após feedback do revisor
+
+**Feedback:** no `task-manager-api`, a Recommendation do finding HIGH sobre o `NotificationService` (injetar configuração, remover estado em memória e **remover a classe se não usada**) ficou aplicada só em parte — `src/services/notification_service.py` permaneceu no projeto sem nenhum chamador.
+
+**Ações tomadas:**
+1. **Skill ajustada (Fase 3 do `SKILL.md`, nas 12 cópias):** agora exige aplicar cada Recommendation **por inteiro** — código morto apontado no relatório deve ser removido (ou de fato integrado, com justificativa) — e inclui verificação final *finding por finding* de que cada Recommendation foi aplicada integralmente.
+2. **Skill reexecutada no `task-manager-api`** (Antigravity CLI, Fases 1–2 sobre o código refatorado): a re-auditoria confirmou o apontamento no finding 5 — `NotificationService`, `Settings.SMTP_*` e chaves `SMTP_*` do `.env.example` sem nenhum consumidor (`reports/evidence/agy-rerun-project-3.md` e `p3-rerun-phase1-2.log`).
+3. **Remediação aplicada (resolução "a" da Recommendation):** removidos `src/services/` (serviço + `__init__.py`), `Settings.SMTP_*` e as chaves `SMTP_*` do `.env.example`. A Fase 3 pela ferramenta foi bloqueada por cota do plano gratuito (`RESOURCE_EXHAUSTED`, reset em ~7 dias), então a remediação do finding foi aplicada manualmente seguindo exatamente a Recommendation do relatório (log em `p3-rerun-phase3.log`).
+4. **Validação:** `python -m unittest` 2/2 OK; boot real com `GET /health -> 200` e `GET /tasks` sem token `-> 401` (contrato preservado).
+
+A re-auditoria também listou refinamentos adicionais (1 HIGH e 6 MEDIUM/LOW) sobre o código já refatorado, registrados em `agy-rerun-project-3.md` como backlog. O HIGH propõe extrair camada de services dos controllers; manteve-se a estrutura atual com justificativa: o alvo MVC do desafio e das guidelines da skill define que *"Controllers concentram o fluxo da aplicação"*, e a mudança não envolve código morto nem segurança.
+
 ## Evidências
 Baseline e verificação pós-refatoração por projeto: chamadas reais (HTTP/test client) antes e depois, com diff contendo apenas as mudanças intencionais documentadas em cada PR (#3, #5, #7).
 

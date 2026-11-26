@@ -512,7 +512,7 @@ A skill deve atingir os seguintes mínimos em **todos os 3 projetos**:
 
 # Construção da Skill
 
-A skill `refactor-arch` fica em `.gemini/skills/refactor-arch/`, `.claude/skills/refactor-arch/` e `.github/skills/refactor-arch/` (conteúdo idêntico) em cada um dos 3 projetos.
+A skill `refactor-arch` fica em `.agents/skills/refactor-arch/` (Antigravity CLI), `.gemini/skills/refactor-arch/`, `.claude/skills/refactor-arch/` e `.github/skills/refactor-arch/` (conteúdo idêntico) em cada um dos 3 projetos.
 
 **Arquivos**
 | Arquivo | Papel |
@@ -532,7 +532,8 @@ A skill `refactor-arch` fica em `.gemini/skills/refactor-arch/`, `.claude/skills
 - Projeto parcialmente em camadas (projeto 3): melhora-se a estrutura existente em vez de recriar do zero.
 
 **Desafios**
-- Claude Code não estava disponível (plano Free); a skill foi executada pelo GitHub Copilot seguindo o mesmo `SKILL.md`.
+- Claude Code não estava disponível (plano Free); a primeira execução da skill foi feita pelo GitHub Copilot seguindo o mesmo `SKILL.md`.
+- O Gemini CLI foi descontinuado para contas individuais em 18/06/2026 (o backend recusa o login pessoal com "This client is no longer supported for Gemini Code Assist for individuals"). A execução oficial foi feita com o **Antigravity CLI (`agy`)**, sucessor oficial do Gemini CLI anunciado pelo Google, que aceita conta Google pessoal e usa a mesma estrutura de skills (pasta `.agents/skills/` em vez de `.gemini/skills/`, conforme o guia de migração oficial).
 - `sqlite3` nativo bloqueado pelo `allowScripts` do npm (projeto 2): resolvido com `prebuild-install`.
 - Preservar contratos de API enquanto se corrige segurança: mudanças de comportamento foram listadas explicitamente em cada PR.
 
@@ -591,22 +592,48 @@ Nos projetos 1 e 2 a verificação foi equivalente: servidor iniciado como proce
 - **Python/Flask (P1, P3):** a detecção por `requirements.txt` e imports funcionou bem; os anti-patterns de SQL injection, N+1 e `except:` nus foram encontrados de forma direta. APIs deprecated (`utcnow`, `Query.get`) só aparecem em P3.
 - **Node/Express (P2):** os mesmos conceitos do catálogo (God class, callback hell, credenciais, criptografia fraca) foram mapeados para JS; a refatoração exigiu promisificar o sqlite e extrair um composition root.
 - **Projeto parcialmente em camadas (P3):** a skill melhorou as camadas existentes em vez de recriar tudo, movendo lógica das rotas para controllers e extraindo categorias de `report_routes`.
-- Limitação: a execução foi feita pelo GitHub Copilot lendo o `SKILL.md`, não pelo Claude Code.
+- A refatoração commitada neste repositório foi produzida pela primeira execução (GitHub Copilot lendo o `SKILL.md`); a execução oficial pela ferramenta do desafio foi feita depois com o Antigravity CLI (ver seção abaixo).
+
+## Execução oficial pela ferramenta (Antigravity CLI, sucessor do Gemini CLI)
+
+A skill foi executada de ponta a ponta pelo **Antigravity CLI 1.5.17** (`agy`), em 25/11/2026, sobre **cópias isoladas do código original** (commit `6d1ce62`, anterior a qualquer refatoração), com a skill em `.agents/skills/refactor-arch/`. As 3 fases executaram em sequência, com pausa real no gate de confirmação da Fase 2 e validação por boot + chamadas HTTP na Fase 3:
+
+| Projeto | Fase 1 (stack detectada) | Fase 2 (findings) | Fase 3 (validação) |
+|---|---|---|---|
+| 1 — code-smells-project | Python / Flask 3.1.1 | 17 (5 CRIT, 3 HIGH, 4 MED, 5 LOW) | Boot ✓, 22/22 endpoints ✓, grep limpo ✓ |
+| 2 — ecommerce-api-legacy | JavaScript / Express ^4.18.2 | 15 (4 CRIT, 3 HIGH, 4 MED, 4 LOW) | Boot ✓, 10 cenários nos 3 endpoints ✓, grep limpo ✓ |
+| 3 — task-manager-api | Python / Flask 3.0.0 + SQLAlchemy | 15 (3 CRIT, 3 HIGH, 4 MED, 5 LOW) | Boot ✓, 22/22 endpoints ✓, grep limpo ✓ |
+
+Evidências em `reports/evidence/`: logs completos de cada fase (`pN-phase1-2.log`, `pN-phase3.log`) e os relatórios de auditoria gerados pelo `agy` (`agy-audit-project-N.md`). Os relatórios em `reports/audit-project-N.md` e o código refatorado commitado permanecem os da primeira execução.
 
 ## Evidências
 Baseline e verificação pós-refatoração por projeto: chamadas reais (HTTP/test client) antes e depois, com diff contendo apenas as mudanças intencionais documentadas em cada PR (#3, #5, #7).
 
 # Como Executar
 
-**Skill — Gemini CLI**: requer Node.js, npm e uma conta Google com acesso ao Gemini CLI. Em um terminal aberto na pasta de cada projeto, execute:
+**Skill — Antigravity CLI (`agy`, sucessor oficial do Gemini CLI)**: requer uma conta Google pessoal. Instale e autentique:
 
 ```powershell
-npx --yes @google/gemini-cli
+# Instalar o CLI (Windows)
+iwr https://antigravity.google/cli/install.ps1 -UseBasicParsing -OutFile "$env:TEMP\agy-install.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\agy-install.ps1"
+
+# Primeira execução: abre o fluxo de login com conta Google (cole o código de autorização quando solicitado)
+agy
 ```
 
-Faça login com sua conta Google e, se solicitado, avalie a confiança na pasta do projeto. No prompt do Gemini, use `/skills list` para verificar se `refactor-arch` está disponível e peça: `Use a skill refactor-arch para analisar, auditar e refatorar este projeto.` Confirme a ativação quando solicitada. A skill pausa após a auditoria; revise o relatório antes de responder `y` para iniciar a refatoração.
+Em um terminal aberto na pasta de cada projeto (a skill fica em `.agents/skills/refactor-arch/`):
 
-Repita a execução em `code-smells-project`, `ecommerce-api-legacy` e `task-manager-api`. Como estes diretórios já estão refatorados, para demonstrar as três fases desde o código legado use cópias isoladas dos projetos originais e preserve os relatórios existentes. A execução anterior descrita em Resultados foi feita pelo GitHub Copilot; a execução pelo Gemini ainda precisa ser realizada e documentada.
+```powershell
+# Fases 1 e 2 (análise + auditoria; para no gate de confirmação)
+agy -p "Execute a skill /refactor-arch neste projeto. Salve o relatorio da Fase 2 em reports/audit-project-N.md. Execute apenas as Fases 1 e 2 e pare na pergunta de confirmacao."
+
+# Fase 3 (refatoração + validação), continuando a mesma conversa
+agy -c -p "y"
+```
+
+Em modo headless o `agy` nega permissões de comando por padrão; adicione allow-rules em `settings.json` ou use `--dangerously-skip-permissions` apenas em cópias isoladas do projeto. Alternativamente, rode `agy` interativo e peça `/refactor-arch`, aprovando as ações quando solicitado.
+
+A execução oficial foi feita em cópias isoladas do código original (commit `6d1ce62`); os diretórios deste repositório já estão refatorados, então para reproduzir as três fases desde o código legado use cópias dos projetos originais e preserve os relatórios existentes. Evidências da execução: `reports/evidence/`.
 
 **Projetos**
 ```bash

@@ -8,12 +8,12 @@
 | # | Requisito | Estado |
 |---|-----------|--------|
 | R1 | Skill completa com SKILL.md e cinco áreas de referência | feito |
-| R2 | Skill executada nos três projetos com três fases verificáveis | parcial |
+| R2 | Skill executada nos três projetos com três fases verificáveis | feito: Antigravity CLI em cópias do código original |
 | R3 | Relatórios de auditoria persistidos | feito |
 | R4 | Código refatorado dos três projetos commitado | feito |
 | R5 | README com análise, construção, resultados e execução | feito |
-| R6 | Validação independente por boot e endpoints | parcial: smoke tests |
-| R7 | Validação com Claude Code, Gemini CLI ou Codex | pendente: Gemini selecionado |
+| R6 | Validação independente por boot e endpoints | feito: boot + endpoints nas duas execuções |
+| R7 | Validação com Claude Code, Gemini CLI ou Codex | feito: Antigravity CLI 1.5.17, sucessor oficial do Gemini CLI (descontinuado para contas individuais em 06/2026) |
 | R8 | Repositório público no GitHub | confirmado |
 
 ## Dúvidas
@@ -86,12 +86,12 @@
 - **Resultado:** Os três relatórios existem, os testes mínimos passaram e a página pública do GitHub foi confirmada. O commit `6357f7e` foi enviado. A adaptação posterior para Gemini ainda precisa ser revisada e commitada.
 
 ## Resumo final
-- Feito: smoke tests parciais e testes mínimos dos três projetos; três relatórios presentes; repositório público confirmado; cópias da skill preparadas para Gemini CLI.
-- Pendente: executar a skill pelo Gemini CLI em cópias do código original; registrar evidências das três fases e validar os endpoints.
-- Não verificado: execução completa pelo Gemini CLI e causa exata da falha de rede.
+- Feito: skill executada de ponta a ponta pelo Antigravity CLI 1.5.17 (`agy`) em 25/11/2026 sobre cópias isoladas do código original (commit `6d1ce62`), com as 3 fases verificadas nos 3 projetos (17/15/15 findings; boot + endpoints validados na Fase 3). Evidências e relatórios do `agy` commitados em `reports/evidence/`; skill adicionada em `.agents/skills/` nos 3 projetos; README atualizado (Desafios, Resultados e Como Executar).
+- Decisões do usuário: manter em `reports/audit-project-N.md` os relatórios da primeira execução (Copilot) e manter o código refatorado já commitado; a execução oficial fica documentada via `reports/evidence/`.
+- Contexto: o Gemini CLI foi descontinuado para contas individuais em 18/06/2026; a execução pelo login pessoal retornava "This client is no longer supported for Gemini Code Assist for individuals". O Antigravity CLI é o sucessor oficial (skills em `.agents/skills/`), autenticado com conta Google pessoal.
 
-## Retomada em outra máquina
+## Retomada em outra máquina (histórico)
 - O usuário informou que a autenticação no Gemini CLI foi bem-sucedida e que `refactor-arch` aparece em `/skills list`.
 - Ao solicitar a execução, o Gemini retornou `API Error: exception TypeError: fetch failed sending request`. Um teste local ao endpoint `generativelanguage.googleapis.com` falhou com `UNABLE_TO_VERIFY_LEAF_SIGNATURE`; a causa exata do erro do Gemini não foi confirmada.
-- Na outra máquina, testar a conexão e executar a skill em cópias isoladas dos projetos originais. A revisão Git `560697e` contém os três projetos antes da refatoração; preservar o código refatorado e os relatórios existentes.
+- Na outra máquina, testar a conexão e executar a skill em cópias isoladas dos projetos originais. (Correção: a revisão `560697e` não existe neste clone; o baseline pré-refatoração é o commit inicial `6d1ce62`.) Preservar o código refatorado e os relatórios existentes.
 - Validar boot e endpoints, guardar evidências reais e atualizar o README sem atribuir ao Gemini a execução anterior pelo Copilot.

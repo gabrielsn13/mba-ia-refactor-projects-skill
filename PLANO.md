@@ -17,8 +17,8 @@
 | R8 | Repositório público no GitHub | confirmado |
 
 ## Dúvidas
-- Gemini CLI foi selecionado; a execução das três fases depende de conexão funcional e confirmação do usuário.
-- Os testes existentes são parciais e não comprovam todos os endpoints.
+- ~~Gemini CLI foi selecionado; a execução das três fases depende de conexão funcional e confirmação do usuário.~~ Resolvido: o Gemini CLI foi descontinuado para contas individuais; a execução foi feita pelo Antigravity CLI (sucessor oficial) — ver Resumo final.
+- ~~Os testes existentes são parciais e não comprovam todos os endpoints.~~ Mitigado: a Fase 3 da execução oficial validou todos os endpoints mapeados por baseline (22/22, 10 cenários e 22/22); os testes automatizados mínimos continuam como regressão de boot.
 
 ## Passos
 
@@ -83,7 +83,7 @@
 - **Ação:** Reexecutar Git status, inventariar relatórios e skill, e identificar pendências externas.
 - **Pronto quando:** Não existem alterações não revisadas e o resumo final separa feito, pendente e não verificado.
 - **Verificação:** `git --no-pager status --short; git --no-pager diff --stat; Test-Path reports/audit-project-1.md,reports/audit-project-2.md,reports/audit-project-3.md`
-- **Resultado:** Os três relatórios existem, os testes mínimos passaram e a página pública do GitHub foi confirmada. O commit `6357f7e` foi enviado. A adaptação posterior para Gemini ainda precisa ser revisada e commitada.
+- **Resultado:** Os três relatórios existem, os testes mínimos passaram e a página pública do GitHub foi confirmada. O commit `6357f7e` foi enviado. A adaptação posterior para Gemini foi revisada e commitada em `21ee916`; a execução oficial pelo Antigravity CLI foi commitada em `c19fad0`.
 
 ## Resumo final
 - Feito: skill executada de ponta a ponta pelo Antigravity CLI 1.5.17 (`agy`) em 25/11/2026 sobre cópias isoladas do código original (commit `6d1ce62`), com as 3 fases verificadas nos 3 projetos (17/15/15 findings; boot + endpoints validados na Fase 3). Evidências e relatórios do `agy` commitados em `reports/evidence/`; skill adicionada em `.agents/skills/` nos 3 projetos; README atualizado (Desafios, Resultados e Como Executar).
